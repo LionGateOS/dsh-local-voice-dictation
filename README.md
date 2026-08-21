@@ -67,8 +67,8 @@ Two halves in one small package (~330 lines of JS):
 
 | File | Role |
 |---|---|
-| `index.js` | Node half — registers the same-origin `POST /voice-proxy/transcribe` route (refcounted so multiple sessions share one registration) |
-| `client.js` | Browser half — Dictate button, mic capture, transcript insertion into the draft via `setDraft()` |
+| `index.js` | Node half — registers the same-origin `/voice-proxy/transcribe` and `/voice-proxy/speech` routes |
+| `client.js` | Browser half — Dictate button, mic capture, transcript insertion, and per-assistant-message Speak controls |
 | `package.json` | Manifest: `@local/voice-dictation`, ESM, node `main` + `./client` export |
 
 ## Required engine interface
@@ -90,8 +90,7 @@ composition (or a profile patch) — the intended lightweight add-on pattern,
 *not* a copied full agent preset:
 
 ```yaml
-- id: voice-dictation
-  name: '@local/voice-dictation'
+- name: '@local/voice-dictation'
 ```
 
 This is the pattern currently in use. It has not yet been confirmed as the
@@ -106,8 +105,8 @@ DeepSeek Harness community (see ROADMAP.md, phase 2).
 ## Requirements
 
 - A DeepSeek Harness web UI (developer preview)
-- A local STT engine reachable on `127.0.0.1` (see "Required engine
-  interface" above)
+- A local STT engine reachable on `127.0.0.1`
+- A Kokoro-compatible TTS endpoint for Speak
 - Browser microphone permission
 
 If the engine is down, the proxy returns HTTP 502 with a clear error and the

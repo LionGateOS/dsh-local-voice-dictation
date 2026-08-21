@@ -21,6 +21,11 @@ This repository is the source of truth. To update a local runtime, re-copy
 `package.json`, `index.js`, and `client.js` into the runtime's
 `node_modules/@local/voice-dictation/` directory.
 
+The current plugin provides both local dictation and assistant-response
+speech. Dictation requires the local `/transcribe` engine endpoint. Speak
+requires the Kokoro-compatible `/v1/audio/speech` endpoint used by the
+Harness `/voice-proxy/speech` route.
+
 ### Prototype-only steps (not recommended as practice)
 
 The steps below touch a DSH runtime's local files directly. They are
@@ -39,8 +44,7 @@ composition (editing a `~/.dsh` preset file directly — prototype-only, not
 recommended):
 
 ```yaml
-- id: voice-dictation
-  name: '@local/voice-dictation'
+- name: '@local/voice-dictation'
 ```
 
 Every step above is an **additive copy of three small files**. This document
