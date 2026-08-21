@@ -1,0 +1,29 @@
+# dependencies / build artifacts
+node_modules/
+dist/
+
+# python runtime artifacts
+.venv/
+venv/
+__pycache__/
+
+# model files and large binaries
+*.gguf
+*.onnx
+*.bin
+
+# logs / environment / secrets
+*.log
+.env
+.env.*
+credentials*
+*credentials*
+*.key
+*.pem
+
+# editor / OS
+.DS_Store
+
+# DSH user data — never in the repo
+~/.dsh/
+.dsh/
