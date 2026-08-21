@@ -181,6 +181,177 @@ window.__ModuleLoader__.load({
         E("span", null, listening ? "Stop" : (busy ? "…" : "Dictate")));
     }
 
+
+    // Global state for managing audio playback
+    let activeAudio = null;
+    let activeGenerationToken = null;
+
+    function AssistantSpeakButton(props) {
+      const nodes = props.useSession((session) => session.nodes);
+      const messageId = props.messageId;
+
+      // Track state per message ID
+      const [buttonState, setButtonState] = react.useState('idle'); // 'idle', 'generating', 'playing'
+      const [audioElement, setAudioElement] = react.useState(null);
+
+      const handleSpeak = async () => {
+        // Prevent duplicate clicks while generating.
+        if (buttonState === 'generating') {
+          return;
+        }
+
+        // While playing, the same button acts as Stop.
+        if (buttonState === 'playing') {
+          if (activeAudio) {
+            activeAudio.pause();
+            activeAudio.currentTime = 0;
+            activeAudio = null;
+          }
+          activeGenerationToken = null;
+          setAudioElement(null);
+          setButtonState('idle');
+          return;
+        }
+
+        // Stop any currently playing audio
+        if (activeAudio) {
+          activeAudio.pause();
+          activeAudio = null;
+        }
+
+        // Update button state to generating
+        setButtonState('generating');
+
+        const node = nodes.find((item) =>
+          item &&
+          item.kind === "assistant" &&
+          item.messageId &&
+          String(item.messageId) === String(messageId)
+        );
+
+        if (!node || !Array.isArray(node.blocks)) {
+          setToast("error", "Could not find this assistant message.");
+          setButtonState('idle');
+          return;
+        }
+
+        const text = node.blocks
+          .filter((block) =>
+            block &&
+            block.kind === "text" &&
+            typeof block.text === "string"
+          )
+          .map((block) => block.text)
+          .join("\n")
+          .trim();
+
+        if (!text) {
+          setToast("info", "This assistant message has no text to speak.");
+          setButtonState('idle');
+          return;
+        }
+
+        // Create a generation token to prevent stale requests
+        const generationToken = Symbol('generation');
+        activeGenerationToken = generationToken;
+
+        try {
+          const resp = await fetch("/voice-proxy/speech", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text.slice(0, 1000) }),
+          });
+
+          // Check if this is still the latest request
+          if (activeGenerationToken !== generationToken) {
+            setButtonState('idle');
+            return;
+          }
+
+          if (!resp.ok) throw new Error("http " + resp.status);
+
+          const audioBlob = await resp.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+
+          // Set audio element to state for cleanup
+          setAudioElement(audio);
+
+          // Update button state to playing
+          setButtonState('playing');
+
+          // Set active audio reference
+          activeAudio = audio;
+
+          // Clean up when audio finishes
+          audio.onended = () => {
+            // Check if this is still the active audio
+            if (activeAudio === audio) {
+              activeAudio = null;
+              URL.revokeObjectURL(audioUrl);
+              setAudioElement(null);
+              setButtonState('idle');
+            }
+          };
+
+          // Handle audio errors
+          audio.onerror = () => {
+            // Check if this is still the active audio
+            if (activeAudio === audio) {
+              activeAudio = null;
+              URL.revokeObjectURL(audioUrl);
+              setAudioElement(null);
+              setButtonState('idle');
+              setToast(
+                "error",
+                "Speech playback failed"
+              );
+            }
+          };
+
+          await audio.play();
+        } catch (err) {
+          // Check if this is still the active audio
+          if (activeAudio === audioElement) {
+            activeAudio = null;
+          }
+          setAudioElement(null);
+          setButtonState('idle');
+          setToast(
+            "error",
+            "Speak failed: " +
+              (err && err.message ? err.message : "unknown error")
+          );
+        }
+      };
+
+      // Cleanup effect
+      react.useEffect(() => {
+        return () => {
+          if (audioElement) {
+            audioElement.pause();
+            if (audioElement.src) {
+              URL.revokeObjectURL(audioElement.src);
+            }
+          }
+        };
+      }, [audioElement]);
+
+      // Render based on current state
+      const isGenerating = buttonState === 'generating';
+      const isPlaying = buttonState === 'playing';
+
+      return E("button", {
+        type: "button",
+        className: "vd-assistant-speak" + (isGenerating ? " vd-assistant-speak-generating" : "") + (isPlaying ? " vd-assistant-speak-playing" : ""),
+        title: isGenerating ? "Generating speech..." : isPlaying ? "Stop speaking" : "Read this response aloud",
+        "aria-label": isGenerating ? "Generating speech..." : isPlaying ? "Stop speaking" : "Read this response aloud",
+        disabled: isGenerating,
+        onClick: handleSpeak,
+      },
+        isGenerating ? "Generating..." : isPlaying ? "⏹️" : "🔊");
+    }
+
     function LiveStrip() {
       const state = useVoiceState();
       if (state.phase === "recording") return E("div", { className: "vd-strip", role: "status" },
@@ -216,6 +387,10 @@ window.__ModuleLoader__.load({
           ".vd-strip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }",
           ".vd-toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); z-index: 2147483000; display: flex; align-items: center; max-width: min(480px, calc(100vw - 48px)); padding: 9px 14px; border: 1px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.5)); border-radius: 8px; background: var(--dsw-alias-bg-overlay, rgba(20,20,24,0.95)); color: var(--dsw-alias-label-primary, #e6e6e6); font-size: 12.5px; line-height: 1.4; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28); pointer-events: none; }",
           ".vd-toast-error { border-color: var(--dsw-alias-state-error-primary, #ff5b5b); }",
+          ".vd-assistant-speak { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 2px 4px; font: inherit; opacity: 0.7; }",
+          ".vd-assistant-speak:hover { opacity: 1; }",
+          ".vd-assistant-speak-generating { opacity: 0.5; }",
+          ".vd-assistant-speak-playing { opacity: 1; }",
         ].join("\n");
         document.head.appendChild(el);
         return () => { if (el.parentNode) el.parentNode.removeChild(el); };
@@ -225,6 +400,14 @@ window.__ModuleLoader__.load({
       if (slots !== undefined) {
         slots.inject("conversation.input.right", () => {
           slots.register({ name: "conversation.input.right", id: "vd-mic", order: 10, label: "Voice dictation" }, MicButton);
+        });
+        slots.inject("conversation.chat.assistant-actions", () => {
+          slots.register({
+            name: "conversation.chat.assistant-actions",
+            id: "vd-assistant-speak",
+            order: 20,
+            label: "Speak response"
+          }, AssistantSpeakButton);
         });
         slots.inject("conversation.input.dock", () => {
           slots.register({ name: "conversation.input.dock", id: "vd-live", order: 10, label: "Voice live transcript" }, LiveStrip);
@@ -237,6 +420,11 @@ window.__ModuleLoader__.load({
       ctx.effect(() => () => {
         stopMedia();
         if (toastDisposer !== null) clearTimeout(toastDisposer);
+        // Cleanup active audio when plugin unloads
+        if (activeAudio) {
+          activeAudio.pause();
+          activeAudio = null;
+        }
       }, "voice-dictation: cleanup");
     }
 
