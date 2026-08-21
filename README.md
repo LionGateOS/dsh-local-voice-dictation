@@ -29,10 +29,36 @@ auto-send:
 **It never auto-sends messages.** The transcript always lands in the draft;
 you review it and send it yourself.
 
+## Speak
+
+Each finalized assistant response gets a speaker control.
+
+The Speak flow uses local Kokoro text-to-speech:
+
+1. Click the speaker attached to an assistant response.
+2. The button immediately shows `Generating...`.
+3. The response text is sent through the same-origin route
+   `POST /voice-proxy/speech`.
+4. The proxy forwards the text to the local Kokoro-compatible voice engine.
+5. When playback starts, the control becomes `Stop speaking`.
+6. Only one generated audio stream is allowed at a time, preventing delayed
+   duplicate clicks from producing overlapping voices.
+
+The currently tested Kokoro endpoint is:
+
+`POST http://127.0.0.1:8768/v1/audio/speech`
+
+The assistant action is mounted using DeepSeek Harness's
+`conversation.chat.assistant-actions` slot.
+
 ## The local flow
 
 ```
+Dictate:
 browser mic  →  same-origin /voice-proxy/transcribe  →  local engine (127.0.0.1)  →  transcript  →  composer draft
+
+Speak:
+assistant response  →  same-origin /voice-proxy/speech  →  local Kokoro TTS  →  WAV  →  browser playback
 ```
 
 ## How it's built
@@ -93,5 +119,10 @@ validated).
 
 - ✅ Dictation round-trip demonstrated: record → proxy → engine → draft
 - ✅ No auto-send; transcript always lands in the draft
+- ✅ Assistant-response Speak button
+- ✅ Local Kokoro TTS through `/voice-proxy/speech`
+- ✅ Visible `Generating...` state while speech is being prepared
+- ✅ Duplicate generation clicks are blocked
+- ✅ Only one plugin-generated audio stream plays at a time
+- ✅ `Stop speaking` immediately stops active playback
 - ⚠️ Installation is manual for now (see INSTALL.md)
-- 🔜 TTS (Kokoro) is planned, not started
