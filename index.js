@@ -123,6 +123,7 @@ async function ttsHandler(req, res) {
 
 const plugin = {
   name: 'voice-dictation',
+  inject: ['webServer'],
   apply(ctx) {
     refs += 1;
     const webServer = ctx.get('webServer');
