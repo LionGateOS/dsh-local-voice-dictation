@@ -5,12 +5,17 @@ Created by LionGateOS
 Author: Antonio Vidal <antoniovidaljr@gmail.com>
 
 
-> **Experimental prototype.** A local voice dictation add-on for DeepSeek
-> Harness. The source here works, but packaging and installation are still
-> being finalized.
+> **Local voice for DeepSeek Harness.** Dictate with your microphone through
+> local speech-to-text, then listen to finalized assistant responses through
+> local Kokoro text-to-speech.
 
-Independent community prototype; not an official DeepSeek project and not an
-upstream PR. Licensed under MIT.
+- **Local STT dictation** — microphone audio stays on your local voice path.
+- **Local Kokoro TTS** — Speak controls on finalized assistant responses.
+- **No auto-send** — dictated text is inserted into the draft for review.
+- **Playback control** — visible generation state and Stop speaking support.
+
+Independent community plugin; not an official DeepSeek project or upstream PR.
+Licensed under MIT.
 
 ## What it does
 
