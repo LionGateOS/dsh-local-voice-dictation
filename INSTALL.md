@@ -1,13 +1,13 @@
 # Installation
 
-> **Installation is not finalized.** This document describes the current
-> prototype setup and the intended direction. Follow the "current" section
-> only if you are reproducing this exact prototype.
+> **Manual installation.** The plugin is working, but it is not yet distributed
+> as a one-command package install. This document describes the current manual
+> setup and the planned packaging direction.
 
-> **Licensed under MIT.** This is an independent community prototype; not an
+> **Licensed under MIT.** This is an independent community plugin; not an
 > official DeepSeek project and not an upstream PR.
 
-## Current state (prototype)
+## Current manual installation
 
 Installation today is manual: the three source files are copied into the
 `node_modules` of the runtime that resolves the plugin. Those copies are
@@ -26,22 +26,21 @@ speech. Dictation requires the local `/transcribe` engine endpoint. Speak
 requires the Kokoro-compatible `/v1/audio/speech` endpoint used by the
 Harness `/voice-proxy/speech` route.
 
-### Prototype-only steps (not recommended as practice)
+### Manual copy steps
 
-The steps below touch a DSH runtime's local files directly. They are
-**prototype-only and not recommended** as a general pattern; the intended
-direction (below) makes them unnecessary.
+The steps below touch a DSH runtime's local files directly. They work for
+the current setup, but they are a manual installation method rather than the
+long-term packaging direction described below.
 
 ```sh
-# Prototype-only: create the plugin's runtime install location, then copy
+# Create the plugin's runtime install location, then copy
 # the three source files into it (adjust the checkout path as needed).
 mkdir -p <dsh-checkout>/node_modules/@local/voice-dictation
 cp package.json index.js client.js <dsh-checkout>/node_modules/@local/voice-dictation/
 ```
 
-The prototype-era mount point was a single row appended to an agent preset
-composition (editing a `~/.dsh` preset file directly — prototype-only, not
-recommended):
+Mount the plugin as a single row in the active agent composition or profile
+patch:
 
 ```yaml
 - name: '@local/voice-dictation'
