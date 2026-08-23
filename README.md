@@ -88,19 +88,14 @@ The current local **LionGate Voice Engine** (faster-whisper STT) is one
 compatible local engine implementation; the prototype's proxy is pointed at
 its `/transcribe` endpoint.
 
-## Mounting (working prototype pattern)
+## Mounting
 
-The working prototype pattern is a single plugin row in an existing agent
-composition (or a profile patch) — the intended lightweight add-on pattern,
-*not* a copied full agent preset:
+Mount the plugin as a single plugin row in an existing agent composition
+(or profile patch):
 
 ```yaml
 - name: '@local/voice-dictation'
 ```
-
-This is the pattern currently in use. It has not yet been confirmed as the
-best-supported approach, and that confirmation is an open question with the
-DeepSeek Harness community (see ROADMAP.md, phase 2).
 
 > Note: an earlier prototype packaged this as a full copied "Voice Mode"
 > agent preset. That approach turned out to be unstable (default-preset
