@@ -44,6 +44,17 @@ window.__ModuleLoader__.load({
       const next = draft.length === 0 ? text : (/\s$/.test(draft) ? draft + text : draft + " " + text);
       actions.setDraft(next);
     }
+// Verification function to check if text was actually inserted into draft
+function verifyDraftContains(text) {
+  const state = voice.input;
+  if (state === null || typeof state.draft !== "string") {
+    return false;
+  }
+  const draft = state.draft;
+  // Check if the text is contained in the current draft
+  return draft.includes(text);
+}
+
 
     async function beginTranscription(blob) {
       const win = typeof window !== "undefined" ? window : undefined;
@@ -76,7 +87,29 @@ window.__ModuleLoader__.load({
         if (result !== null && typeof result === "object" && result.ok === true) {
           const text = (typeof result.text === "string" ? result.text : "").trim();
           if (text === "") setToast("info", "No speech detected — nothing was added to the message.");
-          else insertDraft(text);
+          else {
+            insertDraft(text);
+            setTimeout(async () => {
+              if (verifyDraftContains(text)) return;
+
+              let copied = false;
+              try {
+                if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+                  await navigator.clipboard.writeText(text);
+                  copied = true;
+                }
+              } catch {
+                copied = false;
+              }
+
+              setToast(
+                "error",
+                copied
+                  ? "Transcription succeeded but automatic insertion failed. Text was copied to the clipboard for manual paste."
+                  : "Transcription succeeded but automatic insertion failed. Please paste the transcript manually."
+              );
+            }, 100);
+          }
         } else if (result !== null && typeof result === "object" && result.ok === false) {
           setToast("error", result.error || "Transcription failed.");
         } else {
