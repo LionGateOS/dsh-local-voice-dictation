@@ -95,12 +95,20 @@ its `/transcribe` endpoint.
 
 ## Mounting
 
-Mount the plugin as a single plugin row in an existing agent composition
-(or profile patch):
+Mount the plugin in the DeepSeek Harness web browser roster:
+
+```text
+packages/bundle/web-app/cordis.patch.yml
+```
+
+Add this browser plugin row:
 
 ```yaml
-- name: '@local/voice-dictation'
+- id: voice-dictation
+  name: '@local/voice-dictation'
 ```
+
+Do not mount the plugin only inside an agent preset. Agent presets do not add the client plugin to the web browser boot graph.
 
 > Note: an earlier prototype packaged this as a full copied "Voice Mode"
 > agent preset. That approach turned out to be unstable (default-preset
