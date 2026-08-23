@@ -17,6 +17,11 @@ Author: Antonio Vidal <antoniovidaljr@gmail.com>
 Independent community plugin; not an official DeepSeek project or upstream PR.
 Licensed under MIT.
 
+## Installation
+
+Installation is currently manual. See [INSTALL.md](INSTALL.md) for the
+current setup procedure and requirements.
+
 ## What it does
 
 Local voice dictation for DeepSeek Harness web sessions — no cloud STT, no
